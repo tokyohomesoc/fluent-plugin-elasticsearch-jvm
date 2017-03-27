@@ -51,7 +51,7 @@ module Fluent
     end
 
     def _get_record
-      result = Hash.new(0)
+      record = Hash.new(0)
       uri = URI.parse("#{@host}/_nodes/stats/jvm,process")
       log.debug(uri)
 
@@ -59,22 +59,25 @@ module Fluent
         request = Net::HTTP::Get.new(uri.request_uri)
         http.request(request) do |response|
           result = JSON.parse(response.body) rescue next
-          
+          log.debug(response.body)
+        
           nodeid    = result['nodes'].keys
           node_mum  = result['nodes'].keys.size
           node_mum  = node_mum -1
+
           record = Hash.new(0)
 
           for i in 0..node_mum do
               node_name = result['nodes'][nodeid[i]]['name']
-              record.store(node_name + "_open_file",      result['nodes'][nodeid[i]]['process']['open_file_descriptors'])
-              record.store(node_name + "_max_file",       result['nodes'][nodeid[i]]['process']['max_file_descriptors'])
-              record.store(node_name + "_heap_used",      result['nodes'][nodeid[i]]['jvm']['mem']['heap_used_in_bytes'])
+              record.store(node_name + "_open_file", result['nodes'][nodeid[i]]['process']['open_file_descriptors'])
+              record.store(node_name + "_max_file", result['nodes'][nodeid[i]]['process']['max_file_descriptors'])
+              record.store(node_name + "_heap_used", result['nodes'][nodeid[i]]['jvm']['mem']['heap_used_in_bytes'])
               record.store(node_name + "_heap_committed", result['nodes'][nodeid[i]]['jvm']['mem']['heap_committed_in_bytes'])
-              record.store(node_name + "_heap_max",       result['nodes'][nodeid[i]]['jvm']['mem']['heap_max_in_bytes'])
-              record.store(node_name + "_heap_used",      result['nodes'][nodeid[i]]['jvm']['mem']['heap_used_in_bytes'])
+              record.store(node_name + "_heap_max", result['nodes'][nodeid[i]]['jvm']['mem']['heap_max_in_bytes'])
+              record.store(node_name + "_heap_used", result['nodes'][nodeid[i]]['jvm']['mem']['heap_used_in_bytes'])
           end
           log.debug(response.body)
+
         end
       end
       record
